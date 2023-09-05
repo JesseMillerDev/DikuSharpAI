@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using DikuSharp.Server.Commands;
 using Newtonsoft.Json;
 
@@ -30,11 +28,15 @@ namespace DikuSharp.Server.Config
         public List<string> ClassFiles { get; set; }
         [JsonProperty( "accountFileRootDirectory" )]
         public string AccountFileRootDirectory { get; set; }
+        [JsonProperty("fileRootDirectory")]
+        public string FileRootDirectory { get; set; }
 
         [JsonProperty( "helpFileDirectory" )]
         public string HelpFileDirectory { get; set; }
         [JsonProperty( "commandDirectory")]
         public string CommandDirectory { get; set; }
+        [JsonProperty("sessionStates")]
+        public Dictionary<string, string> SessionStates { get; set; }
 
         public List<CommandMetaData> Commands { get; set; }
     }

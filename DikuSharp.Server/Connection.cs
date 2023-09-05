@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using CSScripting;
 using DikuSharp.Server.Characters;
 using DikuSharp.Server.Colors;
+using DikuSharp.Server.ConnectionStates;
 
 namespace DikuSharp.Server
 {
@@ -17,18 +16,19 @@ namespace DikuSharp.Server
     /// </summary>
     public class Connection
     {
-        private NetworkStream _stream;
-        private StreamReader _reader;
-        private StreamWriter _writer;
+        private readonly NetworkStream _stream;
+        private readonly StreamReader _reader;
+        private readonly StreamWriter _writer;
+        
         //these act like 'buffers'
-        private string inputBuffer;
+        private readonly List<string> inputBuffer;
+        private readonly List<string> outputBuffer;
+
         private Task<string> inputTask;
-        private string outputBuffer;
         private Task outputTask;
 
         public Guid ConnectionId { get; set; }
-        public ConnectionStatus ConnectionStatus { get; set; }
-
+        public SessionState State { get; set; }
         public PlayerAccount Account { get; set; }
         public bool UseColors { get; set; }
 
@@ -43,8 +43,8 @@ namespace DikuSharp.Server
             set { _currentCharacter = value; _currentCharacter.CurrentConnection = this; }
         }
 
-        public string InputBuffer { get => inputBuffer; }
-        public string OutputBuffer { get => outputBuffer; }
+        public List<string> InputBuffer { get => inputBuffer; }
+        public List<string> OutputBuffer { get => outputBuffer; }
 
         private PlayerCharacter _currentCharacter;
 
@@ -57,9 +57,15 @@ namespace DikuSharp.Server
             _stream = client.GetStream( );
             _reader = new StreamReader( _stream );
             _writer = new StreamWriter( _stream );
+
+            inputBuffer = new List<string>();
+            outputBuffer = new List<string>();
+
             ConnectionId = Guid.NewGuid( );
-            ConnectionStatus = ConnectionStatus.Connected;
-            UseColors = false;//start false
+            
+            SetState(new ConnectedState(this));
+            
+            UseColors = true;//start false
 
             //starts the input task - will complete when the user has typed something in.
             inputTask = _reader.ReadLineAsync();
@@ -71,9 +77,12 @@ namespace DikuSharp.Server
         /// <param name="message"></param>
         public void SendLine( string message, bool sendNewLine = true )
         {
-            var colorMessage = Colorizer.Colorize( message, UseColors );
-            outputBuffer += colorMessage;
-            if ( sendNewLine ) { outputBuffer += "\r\n"; }
+            var colorMessage = Colorizer.Colorize(message).Trim('\0');
+            outputBuffer.Add(colorMessage);
+            if (sendNewLine)
+            {
+                outputBuffer.Add(Environment.NewLine);
+            }
         }
 
         /// <summary>
@@ -89,19 +98,19 @@ namespace DikuSharp.Server
         /// <summary>
         /// Used in game loop to assign input to buffer
         /// </summary>
-        public void Read()
+        public async Task Read()
         {
             try {
                 if (inputTask.IsCompleted)
                 {
                     //they've typed something in, so grab it and listen again
-                    inputBuffer = inputTask.Result;
+                    inputBuffer.Add(inputTask.Result);
                     inputTask = _reader.ReadLineAsync();
                 }
                 else
                 {
                     //null this out so we make sure we never repeat a command
-                    inputBuffer = null;
+                    inputBuffer.Clear();
                 }
             }
             catch(IOException io)
@@ -111,45 +120,47 @@ namespace DikuSharp.Server
                 Mud.I.RemoveConnection(this);
             }
             catch (Exception) { throw; } //throw everything else
-            
         }
-        
+
         /// <summary>
         /// Used in game loop to write output buffer to client
         /// </summary>
-        public void Write()
+        public async Task Write()
         {
-            if (string.IsNullOrEmpty(outputBuffer)) { return; }
+            var msg = outputBuffer.JoinBy(Environment.NewLine);
 
-            if (outputTask == null)
+            if (string.IsNullOrEmpty(msg))
+                return;
+
+            outputTask ??= _writer.WriteLineAsync(msg);
+
+            if (outputTask.IsCompleted)
             {
-                outputTask = _writer.WriteLineAsync(outputBuffer);
-            }
+                await _writer.FlushAsync();
 
-            if ( outputTask.IsCompleted )
-            {
-                _writer.Flush();
-
-                //clear the buffer
-                outputBuffer = string.Empty;
+                outputBuffer.Clear();
                 outputTask = null;
             }
         }
 
-        [Obsolete]        
-        private void CleanUp()
+        public void CleanUp()
         {
-            _stream.Dispose();
-            Mud.I.RemoveConnection(this);
+            if(!_stream.Socket.Connected)
+            {
+                _stream.Dispose();
+                Mud.I.RemoveConnection(this);
+            }
         }
-        
-        /// This code is moved to the game loop - connections will handle adding and removing things from their input/output buffers, but that's it.
-        /// What shows up on the first connection is/should be handled by game loop
-        public void SendWelcomeMessage()
+
+        internal void SetState(SessionState newState)
         {
-            //Ask for colors!
-            SendLine("Do you want to use ANSI colors? (y/n):");            
+            State = newState;
+            newState?.Begin();
         }
-        
+
+        internal void Disconnect()
+        {
+            _stream.Socket.Disconnect(true);
+        }
     }
 }

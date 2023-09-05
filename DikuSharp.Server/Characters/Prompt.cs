@@ -22,7 +22,7 @@
 
         public static string ParsePrompt(PlayerCharacter ch)
         {
-            string formatString = ch.Prompt ?? Prompt.PROMPT_DEFAULT;
+            string formatString = ch.Prompt ?? PROMPT_DEFAULT;
             return formatString.Replace(HP_TOKEN, ch.Hp.ToString())
                 .Replace(MAXHP_TOKEN, ch.MaxHitPoints.ToString())
                 .Replace(MP_TOKEN, ch.Mp.ToString())
@@ -36,22 +36,17 @@
         public override bool Equals(object obj)
         {
             if ( obj == null ) { return false; }
-            if ( obj is Prompt )
+            if ( obj is Prompt prompt)
             {
-                return ((Prompt)obj).Current == this.Current;
+                return prompt.Current == this.Current;
             }
-            if ( obj is string )
-            {
-                return this.Current == (string)obj;
-            }
-
-            return false;
+            return obj is string && Current == (string)obj;
         }
 
         public bool Equals(Prompt obj)
         {
             if ( obj == null ) { return false; }
-            return obj.Current == this.Current;
+            return obj.Current == Current;
         }
 
         public override int GetHashCode()

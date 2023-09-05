@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DikuSharp.Server
@@ -21,6 +17,7 @@ namespace DikuSharp.Server
         {
             //Start up the Mud...
             Mud.I.StartServer( );
+
             //Listen on the network...
             _listener = new TcpListener(IPAddress.Any, Mud.I.Config.PortNumber);
             _listener.Start();

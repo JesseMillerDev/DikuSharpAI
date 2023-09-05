@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DikuSharp.Server.Colors
+﻿namespace DikuSharp.Server.Colors
 {
     public class Colorizer
     {
@@ -40,7 +34,7 @@ namespace DikuSharp.Server.Colors
                                      new Color(  '\0', "", false )
                                  };
 
-        public static string Colorize( string stringToColor, bool useColor )
+        public static string Colorize( string stringToColor, bool useColor = true )
         {
             bool bold = false;
             int last = -1;

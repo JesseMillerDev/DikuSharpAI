@@ -3,9 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DikuSharp.Server.Characters;
@@ -15,7 +13,6 @@ using DikuSharp.Server.Helps;
 using DikuSharp.Server.Models;
 using DikuSharp.Server.Repositories;
 using Newtonsoft.Json;
-using Jint;
 
 namespace DikuSharp.Server
 {
@@ -77,7 +74,6 @@ namespace DikuSharp.Server
         private List<Room> _allRooms = null;
         public List<PlayerAccount> Accounts { get; private set; }
         public List<Help> Helps { get; private set; }
-        public Engine Engine { get; private set; }
         public Room StartingRoom { get; private set; }
         public PlayerCharacter[] AllPlayers {  get { return Connections.Select(c => c.Value.CurrentCharacter).ToArray(); } }
 
@@ -109,21 +105,11 @@ namespace DikuSharp.Server
             Console.WriteLine("Loading command files...");
             Commands = Repo.LoadCommands( Config );
 
-            Console.WriteLine("Prepping JInt environment...");
-            Engine = new Engine(cfg => {
-                cfg.DebugMode();
-               // cfg.AddObjectConverter(new PlayerCharacterConverter()); //From Character to JsValue
-                });
-            Engine.SetValue("HELPS", Helps.ToArray());
-            Engine.SetValue("DO_COMMAND", new Action<PlayerCharacter, string>(InputParser.ParsePlaying));
-            Engine.SetValue("__log", new Action<object>(Console.WriteLine));
-            Engine.SetValue("ADMIN_RESTART", new Action(StartServer));
-            Engine.SetValue("MUD", this);
-
             //Calculate this just once...
             StartingRoom = Areas.First( a => a.Rooms.Exists( r => r.Vnum == Config.RoomVnumForNewPlayers ) )
                     .Rooms.First( r => r.Vnum == Config.RoomVnumForNewPlayers );
-            
+
+            Console.WriteLine("Server is loaded and ready.");
         }
     
         
@@ -138,8 +124,7 @@ namespace DikuSharp.Server
 
         public void RemoveConnection( Connection connection )
         {
-            Connection value;
-            Connections.TryRemove( connection.ConnectionId, out value );
+            Connections.TryRemove(connection.ConnectionId, out Connection value);
         }
 
         #region Game Loop
@@ -152,7 +137,7 @@ namespace DikuSharp.Server
             await GameLoop(listener);
         }
 
-        private Task GameLoop(TcpListener listener)
+        private async Task GameLoop(TcpListener listener)
         {
             bool mudRunning = true;
 
@@ -170,15 +155,15 @@ namespace DikuSharp.Server
                         HandleNewClient(listener);
 
                         //Clean up
-                        foreach (var conn in Mud.I.Connections.Values)
+                        foreach (var conn in I.Connections.Values)
                         {
-                            if (conn.)
+                            conn.CleanUp();
                         }
 
                         //Input
-                        foreach (var conn in Mud.I.Connections.Values)
+                        foreach (var conn in I.Connections.Values)
                         {
-                            conn.Read();
+                            await conn.Read();
                             InputParser.Parse(conn);
                         }
 
@@ -186,45 +171,23 @@ namespace DikuSharp.Server
                         Update();
 
                         //Output
-                        foreach (var conn in Mud.I.Connections.Values)
+                        foreach (var conn in I.Connections.Values)
                         {
                             OutputParser.Parse(conn);
-                            conn.Write();
+                            await conn.Write();
                         }
 
                     }
                     catch ( IOException io )
                     {
                     }
-
-                    //synchornize with the clock
-                    DateTime now = DateTime.Now;
-                    int msDelta = lastTime.Millisecond - now.Millisecond + 1000 / PULSE_PER_SECOND;
-                    int secDelta = lastTime.Second - now.Second;
-
-                    while(msDelta < 0)
-                    {
-                        msDelta += 1000;
-                        secDelta -= 1;
-                    }
-                    while(msDelta >= 1000)
-                    {
-                        msDelta -= 1000;
-                        secDelta += 1;
-                    }
-                    if (secDelta > 0 || (secDelta == 0 && msDelta > 0))
-                    {
-                        Thread.Sleep(new TimeSpan(0, 0, 0, secDelta, msDelta));
-                    }
-
-                    lastTime = DateTime.Now;
                 }
 
-                return Task.CompletedTask;
+                return;
             }
             catch( Exception ex)
             {
-                return Task.FromException(ex);
+                throw ex;
             }
         }
 
@@ -238,8 +201,8 @@ namespace DikuSharp.Server
             if ( holderClientTask.IsCompleted )
             {
                 var connection = new Connection(holderClientTask.Result);
-                Mud.I.AddConnection(connection);
-                connection.SendWelcomeMessage();
+                I.AddConnection(connection);
+                //connection.SendWelcomeMessage();
 
                 //listen for a new one
                 holderClientTask = listener.AcceptTcpClientAsync();

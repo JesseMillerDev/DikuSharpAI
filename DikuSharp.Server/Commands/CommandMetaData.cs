@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using DikuSharp.Server.Enums;
+using System;
+using DikuSharp.Server.Characters;
 
 namespace DikuSharp.Server.Commands
 {
@@ -26,6 +24,6 @@ namespace DikuSharp.Server.Commands
         public bool PreserveQuotes { get; set; }
 
         [JsonIgnore]
-        public string RawJavascript { get; set; }
+        public IMudCommand Command { get; set; }
     }
 }

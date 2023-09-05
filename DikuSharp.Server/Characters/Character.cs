@@ -1,27 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using DikuSharp.Server.Models;
 using Newtonsoft.Json;
-using Jint.Runtime.Interop;
-using Jint.Native;
 
 namespace DikuSharp.Server.Characters
 {
-    public class Character
+    public class Character : IThing
     {
         #region Serializable
 
-        [JsonProperty( "name" )]
+        [JsonProperty("name")]
         public string Name { get; set; }
-        [JsonProperty( "description" )]
+        [JsonProperty("description")]
         public string Description { get; set; }
-        [JsonProperty( "shortDescription" )]
+        [JsonProperty("shortDescription")]
         public string ShortDescription { get; set; }
-        [JsonProperty( "level" )]
         public int Level { get; set; }
+        [JsonProperty("race")]
+        public Race Race { get; set; }
+        [JsonProperty("class")]
+        public Class Class { get; set; }
         [JsonProperty("hitPoints")]
         public int HitPoints { get; set; }
         [JsonProperty( "maxHitPoints" )]
@@ -38,12 +35,17 @@ namespace DikuSharp.Server.Characters
         //Stats!
         [JsonProperty("strength")]
         public int Strength { get; set; }
+        [JsonProperty("constitution")]
+        public int Constitution { get; set; }
         [JsonProperty("dexterity")]
         public int Dexterity { get; set; }
         [JsonProperty("intelligence")]
         public int Intelligence { get; set; }
+        [JsonProperty("wisom")]
+        public int Wisdom { get; set; }
         [JsonProperty("charisma")]
         public int Charisma { get; set; }
+        
 
         [JsonProperty("currentRoomVnum")]
         public long CurrentRoomVnum
@@ -70,14 +72,35 @@ namespace DikuSharp.Server.Characters
         [JsonIgnore]
         public int Str { get { return Strength; } set { Strength = value; } }
         [JsonIgnore]
+        public int Con { get { return Constitution; } set { Constitution = value; } }
+        [JsonIgnore]
         public int Dex { get { return Dexterity; } set { Dexterity = value; } }
         [JsonIgnore]
         public int Int { get { return Intelligence; } set { Intelligence = value; } }
         [JsonIgnore]
-        public int Cha { get { return Charisma; } set { Charisma = value; } }
+        public int Wis { get { return Wisdom; } set { Wisdom = value; } }
+        [JsonIgnore]
+        public int Cha { get { return Charisma; } set { Charisma = value; } }      
 
         #endregion
 
 
+
+        public void Load(Connection conn)
+        {
+            //find the room they quit in
+            var area = Mud.I.Areas.FirstOrDefault(a => a.Rooms.Exists(r => r.Vnum == conn.CurrentCharacter.CurrentRoomVnum));
+            var room = Mud.I.StartingRoom;
+
+            if (area != null)
+            {
+                room = area.Rooms.FirstOrDefault(r => r.Vnum == conn.CurrentCharacter.CurrentRoomVnum) ?? Mud.I.StartingRoom;
+            }
+
+            //assign the room to the player...
+            conn.CurrentCharacter.CurrentRoom = room;
+            //and the player to the room... (this will be removed when the player quits or moves)
+            room.AddCharacter(conn.CurrentCharacter);
+        }
     }
 }

@@ -1,11 +1,12 @@
-﻿using System;
-
-namespace DikuSharp.Server
+﻿namespace DikuSharp.Server
 {
     public enum ConnectionStatus
     {
         Connected,
-        PutInUsername,
+        Login,
+        CreateAccount,
+        ChooseNewPassword,
+        ConfirmNewPassword,
         PutInPassword,
         ChoosingAccount,
         CreatingCharacter,

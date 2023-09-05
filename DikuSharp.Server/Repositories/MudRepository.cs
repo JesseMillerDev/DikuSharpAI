@@ -9,6 +9,8 @@ using DikuSharp.Server.Helps;
 using DikuSharp.Server.Models;
 using DikuSharp.Server.Extensions;
 using Newtonsoft.Json;
+using CSScriptLib;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace DikuSharp.Server.Repositories
 {
@@ -27,7 +29,7 @@ namespace DikuSharp.Server.Repositories
             var areas = new List<Area>( );
             foreach ( var areaFile in config.AreaFiles )
             {
-                var rawJson = File.ReadAllText( areaFile );
+                var rawJson = File.ReadAllText( config.FileRootDirectory + areaFile );
                 var area = JsonConvert.DeserializeObject<Area>( rawJson );
                 area.Rooms.ForEach(r => r.Exits = r.Exits.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value));
                 areas.Add( area );
@@ -43,7 +45,7 @@ namespace DikuSharp.Server.Repositories
         public List<PlayerAccount> LoadAccounts( MudConfig config )
         {
             var accounts = new List<PlayerAccount>( );
-            var root = config.AccountFileRootDirectory;
+            var root = config.FileRootDirectory + config.AccountFileRootDirectory;
 
             //make sure this exists
             if ( !Directory.Exists( root ) )
@@ -94,7 +96,7 @@ namespace DikuSharp.Server.Repositories
         public void SaveAccount( MudConfig config, PlayerAccount account )
         {
             //don't need to check for dirs because we always LOAD first!
-            var root = config.AccountFileRootDirectory;
+            var root = config.FileRootDirectory + config.AccountFileRootDirectory;
             var fileName = $"{account.Name.ToTitleCase()}.account";
             var a = account.Name[0].ToString().ToUpper();
             var path = Path.Combine( root, a, fileName );
@@ -110,7 +112,7 @@ namespace DikuSharp.Server.Repositories
         public List<Help> LoadHelps( MudConfig config )
         {
             var helps = new List<Help>( );
-            var root = config.HelpFileDirectory;
+            var root = config.FileRootDirectory + config.HelpFileDirectory;
             //check if it exists
             if ( !Directory.Exists( root ) )
             {
@@ -156,7 +158,7 @@ namespace DikuSharp.Server.Repositories
         /// <param name="help"></param>
         public void SaveHelp( MudConfig config, Help help )
         {
-            var root = config.HelpFileDirectory;
+            var root = config.FileRootDirectory + config.HelpFileDirectory;
             var path = Path.Combine( root, help.FileName );
             var contents = help.Contents.Replace( "\r", "" ).Replace( "\n", Environment.NewLine );
             var rawHelp = string.Concat( help.Keywords, Environment.NewLine, contents );
@@ -165,9 +167,12 @@ namespace DikuSharp.Server.Repositories
 
         public List<CommandMetaData> LoadCommands(MudConfig config)
         {
+            CSScript.EvaluatorConfig.Engine = EvaluatorEngine.Roslyn;
+            ScriptOptions.Default.AddImports("DikuSharp.Server");
+
             var metaDatas = new List<CommandMetaData>( );
 
-            var root = config.CommandDirectory;
+            var root = config.FileRootDirectory + config.CommandDirectory;
             if ( !Directory.Exists(root))
             {
                 Directory.CreateDirectory( root );
@@ -178,12 +183,19 @@ namespace DikuSharp.Server.Repositories
                 var path = Path.Combine( root, commandMeta.FileName );
                 if ( File.Exists(path))
                 {
-                    var rawJs = File.ReadAllText( path );
-                    commandMeta.RawJavascript = rawJs;
-                    metaDatas.Add(commandMeta);
+                    try
+                    {
+                        commandMeta.Command = CSScript.Evaluator.LoadFile<IMudCommand>(path);
+                        metaDatas.Add(commandMeta);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to compile {commandMeta.FileName} with error: {ex.Message}");
+                        continue;
+                    }
                 }
             }
-
+            Console.WriteLine($"Successfully Loaded {metaDatas.Count} Commands.");
             return metaDatas.OrderBy( md => md.Priority ).ToList();
         }
 
@@ -197,7 +209,7 @@ namespace DikuSharp.Server.Repositories
             var races = new List<Race>();
             foreach (var raceFile in config.RaceFiles)
             {
-                var rawJson = File.ReadAllText(raceFile);
+                var rawJson = File.ReadAllText(config.FileRootDirectory + raceFile);
                 var race = JsonConvert.DeserializeObject<Race>(rawJson);
                 races.Add(race);
             }
@@ -231,7 +243,7 @@ namespace DikuSharp.Server.Repositories
             }
             
             var rawJson = JsonConvert.SerializeObject(race, new JsonSerializerSettings() { Formatting = Formatting.Indented });
-            File.WriteAllText(raceFile, rawJson);
+            File.WriteAllText(config.FileRootDirectory + raceFile, rawJson);
             
         }
     }

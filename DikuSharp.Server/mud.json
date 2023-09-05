@@ -17,25 +17,26 @@
   },
   "roomVnumForNewPlayers": 1,
   "areaFiles": [
-    "./_files/areas/admin.json"
+    "/areas/admin.json"
   ],
   "classFiles": [
-    "./_files/classes/warrior.json",
-    "./_files/classes/mage.json"
+    "/classes/warrior.json",
+    "/classes/mage.json"
   ],
   "raceFiles": [
-    "./_files/races/human.json"
+    "/races/human.json"
   ],
-  "accountFileRootDirectory": "_files/accounts",
-  "helpFileDirectory": "_files/helps",
-  "commandDirectory": "_files/commands",
+  "fileRootDirectory": "../../../_files",
+  "accountFileRootDirectory": "/accounts",
+  "helpFileDirectory": "/helps",
+  "commandDirectory": "/commands",
   "commands": [
     /*****************
      *     ADMIN     *
      ****************/
     {
       "name": "restart",
-      "fileName": "admin/restart.js",
+      "fileName": "admin/RestartCommand.cs",
       "level": 1000,
       "priority": 1
     },
@@ -44,97 +45,105 @@
      *****************/
     {
       "name": "help",
-      "fileName": "help.js",
+      "fileName": "HelpCommand.cs",
       "level": 0,
       "priority": 1
     },
     {
       "name": "look",
-      "fileName": "look.js",
+      "fileName": "LookCommand.cs",
       "level": 0,
       "priority": 1
     },
 
-    /*****************
-     *      INFO     *
-     *****************/
-    {
-      "name": "who",
-      "fileName": "info/who.js",
-      "level": 0,
-      "priority": 200
-    },
-    {
-      "name": "score",
-      "fileName": "info/score.js",
-      "level": 0,
-      "priority": 200
-    },
+    ///*****************
+    // *      INFO     *
+    // *****************/
+    //{
+    //  "name": "who",
+    //  "fileName": "info/who.js",
+    //  "level": 0,
+    //  "priority": 200
+    //},
+    //{
+    //  "name": "score",
+    //  "fileName": "info/score.js",
+    //  "level": 0,
+    //  "priority": 200
+    //},
 
-    /*****************
-     *   DIRECTIONS  *
-     *****************/
-    {
-      "name": "north",
-      "fileName": "dirs/north.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
-    {
-      "name": "south",
-      "fileName": "dirs/south.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
-    {
-      "name": "east",
-      "fileName": "dirs/east.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
-    {
-      "name": "west",
-      "fileName": "dirs/west.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
-    {
-      "name": "up",
-      "fileName": "dirs/up.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
-    {
-      "name": "down",
-      "fileName": "dirs/down.js",
-      "level": 0,
-      "priority": 1,
-      "commandType": "Exit"
-    },
+    ///*****************
+    // *   DIRECTIONS  *
+    // *****************/
+    //{
+    //  "name": "north",
+    //  "fileName": "dirs/north.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
+    //{
+    //  "name": "south",
+    //  "fileName": "dirs/south.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
+    //{
+    //  "name": "east",
+    //  "fileName": "dirs/east.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
+    //{
+    //  "name": "west",
+    //  "fileName": "dirs/west.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
+    //{
+    //  "name": "up",
+    //  "fileName": "dirs/up.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
+    //{
+    //  "name": "down",
+    //  "fileName": "dirs/down.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "commandType": "Exit"
+    //},
 
-    /*****************
-     * Communication *
-     *****************/
-    {
-      "name": "say",
-      "fileName": "communication/say.js",
-      "level": 0,
-      "priority": 1,
-      "aliases": [ "'" ],
-      "preserveQuotes": true
-    },
+    ///*****************
+    // * Communication *
+    // *****************/
+    //{
+    //  "name": "say",
+    //  "fileName": "communication/say.js",
+    //  "level": 0,
+    //  "priority": 1,
+    //  "aliases": [ "'" ],
+    //  "preserveQuotes": true
+    //},
     {
       "name": "ooc",
-      "fileName": "communication/ooc.js",
+      "fileName": "communication/OocCommand.cs",
       "level": 0,
       "priority": 1,
       "aliases": [ "]" ],
       "preserveQuotes": true
     }
-  ]
+  ],
+  "sessionStates": {
+    "ConnectedState": "Enter your account name (or type 'new') to create a new account: ",
+    "LoginState": "Enter your password: ",
+    "CreateAccountState": "Please choose a valid account username: ",
+    "CreateCharacterState": "Please choose a valid name for your character: ",
+    "SelectCharacterState": "-----------------------------------------------------------\r\n| Choose a character (or type 'new') |\r\n-----------------------------------------------------------\r\n",
+    "PlayingState": "Welcome adventurer and enjoy your stay!"
+  }
 }

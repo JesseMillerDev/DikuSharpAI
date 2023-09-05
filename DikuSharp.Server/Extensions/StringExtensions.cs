@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DikuSharp.Server.Characters;
-
-namespace DikuSharp.Server.Extensions
+﻿namespace DikuSharp.Server.Extensions
 {
     public static class StringExtensions
     {

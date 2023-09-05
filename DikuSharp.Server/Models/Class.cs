@@ -2,13 +2,13 @@
 
 namespace DikuSharp.Server.Models
 {
-    public class Race
+    public class Class
     {
         #region Serializable
         
         [JsonProperty( "name" )]
         public string Name { get; set; }
-        
+
         #endregion
     }
 }
